@@ -1,0 +1,26 @@
+services:
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    env_file: .env
+    environment:
+      DB_PATH: /data/komoot_hammerhead.db
+    volumes:
+      - komoot-data:/data
+    restart: unless-stopped
+
+  ui:
+    build:
+      context: ./ui
+      args:
+        VITE_API_URL: "/api"
+        VITE_API_KEY: "${API_SECRET}"
+    ports:
+      - "3000:80"
+    depends_on:
+      - api
+    restart: unless-stopped
+
+volumes:
+  komoot-data:
