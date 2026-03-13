@@ -62,11 +62,11 @@ def sync_all() -> SyncResult:
     return result
 
 
-def sync_one(tour_id: str) -> SyncResult:
+def sync_one(tour_id: str, force: bool = False) -> SyncResult:
     db.init_db()
     result = SyncResult()
 
-    if db.is_synced(tour_id):
+    if not force and db.is_synced(tour_id):
         log.info("Tour %s already synced, skipping", tour_id)
         result.skipped = 1
         return result
@@ -75,9 +75,17 @@ def sync_one(tour_id: str) -> SyncResult:
     hammerhead = HammerheadClient()
 
     try:
+        tour = komoot.get_tour(tour_id)
+        log.info("Syncing single tour: %s (%s)", tour.name, tour.id)
         gpx = komoot.download_gpx(tour_id)
-        hh_id = hammerhead.upload_gpx(tour_id, gpx)
-        db.mark_synced(tour_id, hh_id)
+        hh_id = hammerhead.upload_gpx(tour.name, gpx)
+        db.mark_synced(
+            tour_id,
+            hh_id,
+            name=tour.name,
+            sport_type=tour.sport,
+            distance_km=tour.distance_km,
+        )
         result.synced = 1
     except Exception as exc:
         log.error("Failed to sync tour %s: %s", tour_id, exc)

@@ -49,9 +49,18 @@ export default function App() {
     }, 4000);
   }, []);
 
-  // ── Selection ──────────────────────────────────────────
-
+  // ── Filtering ──────────────────────────────────────────
   const unsyncedTours = tours.filter((t) => !t.synced);
+
+  const filteredTours = tours
+    .filter((t) => {
+      if (filter === 'synced') return t.synced;
+      if (filter === 'unsynced') return !t.synced;
+      return true;
+    })
+    .map((t, i) => ({ ...t, _index: i }));
+
+  // ── Selection ──────────────────────────────────────────
 
   const toggleSelect = useCallback((id) => {
     setSelected((prev) => {
@@ -63,12 +72,12 @@ export default function App() {
   }, []);
 
   const selectAll = useCallback(() => {
-    if (selected.size === unsyncedTours.length) {
+    if (selected.size === filteredTours.length) {
       setSelected(new Set());
     } else {
-      setSelected(new Set(unsyncedTours.map((t) => t.id)));
+      setSelected(new Set(filteredTours.map((t) => t.id)));
     }
-  }, [selected.size, unsyncedTours]);
+  }, [selected.size, filteredTours]);
 
   // ── Sync ───────────────────────────────────────────────
 
@@ -83,14 +92,24 @@ export default function App() {
     for (const tourId of toSync) {
       setSyncing((prev) => new Set(prev).add(tourId));
       try {
-        await syncTour(tourId);
-        successCount++;
-        // Immediately mark as synced in local state
-        setTours((prev) =>
-          prev.map((t) => (t.id === tourId ? { ...t, synced: true } : t))
-        );
-      } catch {
+        const tour = tours.find(t => t.id === tourId);
+        const result = await syncTour(tourId, tour?.synced);
+
+        if (result.failed > 0) {
+          failCount++;
+          if (result.errors && result.errors.length > 0) {
+            addToast(`✗ ${result.errors[0]}`, 'error');
+          }
+        } else {
+          successCount++;
+          // Immediately mark as synced in local state
+          setTours((prev) =>
+            prev.map((t) => (t.id === tourId ? { ...t, synced: true } : t))
+          );
+        }
+      } catch (err) {
         failCount++;
+        addToast(`✗ ${err.message}`, 'error');
       } finally {
         setSyncing((prev) => {
           const next = new Set(prev);
@@ -100,11 +119,10 @@ export default function App() {
       }
     }
 
+    const mode = toSync.every(id => tours.find(t => t.id === id)?.synced) ? 'Resynced' : 'Synced';
+
     if (successCount > 0) {
-      addToast(`✓ Synced ${successCount} route${successCount > 1 ? 's' : ''}`);
-    }
-    if (failCount > 0) {
-      addToast(`✗ ${failCount} route${failCount > 1 ? 's' : ''} failed`, 'error');
+      addToast(`✓ ${mode} ${successCount} route${successCount > 1 ? 's' : ''}`);
     }
 
     // Refresh stats
@@ -114,17 +132,7 @@ export default function App() {
     } catch {
       // silent
     }
-  }, [selected, addToast]);
-
-  // ── Filtering ──────────────────────────────────────────
-
-  const filteredTours = tours
-    .filter((t) => {
-      if (filter === 'synced') return t.synced;
-      if (filter === 'unsynced') return !t.synced;
-      return true;
-    })
-    .map((t, i) => ({ ...t, _index: i }));
+  }, [selected, tours, addToast]);
 
   // ── Render ─────────────────────────────────────────────
 
@@ -170,7 +178,7 @@ export default function App() {
               {syncing.size > 0 && <span className="spinner" />}
               {syncing.size > 0
                 ? `Syncing (${syncing.size})…`
-                : `Sync ${selected.size > 0 ? `(${selected.size})` : ''}`}
+                : `${[...selected].every(id => tours.find(t => t.id === id)?.synced) ? 'Resync' : 'Sync'} ${selected.size > 0 ? `(${selected.size})` : ''}`}
             </button>
             <button
               className={`refresh-btn${loading ? ' loading' : ''}`}

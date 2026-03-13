@@ -12,8 +12,13 @@ export async function fetchTours() {
     return res.json();
 }
 
-export async function syncTour(tourId) {
-    const res = await fetch(`${API_URL}/sync/${tourId}`, {
+export async function syncTour(tourId, force = false) {
+    const baseUrl = API_URL.startsWith('http') ? API_URL : window.location.origin;
+    const path = API_URL.startsWith('http') ? `/sync/${tourId}` : `${API_URL}/sync/${tourId}`;
+    const url = new URL(path, baseUrl);
+    if (force) url.searchParams.append('force', 'true');
+
+    const res = await fetch(url, {
         method: 'POST',
         headers,
     });
@@ -30,5 +35,14 @@ export async function fetchStatus() {
 export async function fetchRoutes(limit = 500) {
     const res = await fetch(`${API_URL}/routes?limit=${limit}`, { headers });
     if (!res.ok) throw new Error(`Failed to fetch routes: ${res.status}`);
+    return res.json();
+}
+
+export async function fetchTourData(tourId) {
+    const baseUrl = API_URL.startsWith('http') ? API_URL : window.location.origin;
+    const path = API_URL.startsWith('http') ? `/tours/${tourId}/data` : `${API_URL}/tours/${tourId}/data`;
+    const url = new URL(path, baseUrl);
+    const res = await fetch(url, { headers });
+    if (!res.ok) throw new Error(`Failed to fetch tour data: ${res.status}`);
     return res.json();
 }

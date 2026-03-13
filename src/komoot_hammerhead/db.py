@@ -72,6 +72,9 @@ def mark_synced(
                 (komoot_tour_id, name, sport_type, distance_km, hammerhead_id, synced_at, status)
             VALUES (?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(komoot_tour_id) DO UPDATE SET
+                name          = excluded.name,
+                sport_type    = excluded.sport_type,
+                distance_km   = excluded.distance_km,
                 hammerhead_id = excluded.hammerhead_id,
                 synced_at     = excluded.synced_at,
                 status        = excluded.status

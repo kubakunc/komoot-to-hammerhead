@@ -47,7 +47,9 @@
   background-color: var(--bg-primary);
 }
 
-*, *::before, *::after {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
@@ -73,6 +75,7 @@ body {
     opacity: 0;
     transform: translateY(12px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -80,17 +83,31 @@ body {
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.5;
+  }
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+  0% {
+    background-position: -200% 0;
+  }
+
+  100% {
+    background-position: 200% 0;
+  }
 }
 
 .fade-in {
@@ -148,9 +165,17 @@ body {
   line-height: 1;
 }
 
-.stat-value.accent { color: var(--accent-light); }
-.stat-value.success { color: var(--success); }
-.stat-value.error { color: var(--error); }
+.stat-value.accent {
+  color: var(--accent-light);
+}
+
+.stat-value.success {
+  color: var(--success);
+}
+
+.stat-value.error {
+  color: var(--error);
+}
 
 .stat-label {
   font-size: 0.7rem;
@@ -228,7 +253,7 @@ body {
 .sync-btn .spinner {
   width: 14px;
   height: 14px;
-  border: 2px solid rgba(255,255,255,0.3);
+  border: 2px solid rgba(255, 255, 255, 0.3);
   border-top-color: white;
   border-radius: 50%;
   animation: spin 0.6s linear infinite;
@@ -286,7 +311,7 @@ body {
 .filter-tab.active {
   background: var(--bg-card);
   color: var(--text-primary);
-  box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
 }
 
 .filter-tab:hover:not(.active) {
@@ -366,6 +391,20 @@ body {
   font-weight: 700;
 }
 
+/* Ensure selected state overrides synced state for clarity when resyncing */
+.route-card.selected.synced {
+  border-color: var(--accent);
+}
+
+.route-card.selected.synced .route-checkbox {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.route-card.selected.synced .route-checkbox::after {
+  color: white;
+}
+
 /* Sport icon pill */
 .sport-icon {
   width: 36px;
@@ -436,6 +475,139 @@ body {
   background: var(--pending-bg);
   border: 1px solid rgba(251, 191, 36, 0.2);
   animation: pulse 1.5s ease-in-out infinite;
+}
+
+/* ─── Expanded Route Card ────────────────────────────── */
+
+.route-card.expanded {
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 20px;
+  cursor: default;
+  gap: 16px;
+  background: var(--bg-card-hover);
+  border-color: var(--accent);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.expanded-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+}
+
+.expanded-content {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  animation: fadeInUp 0.4s ease-out;
+}
+
+.viz-box {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: var(--radius-sm);
+  padding: 0;
+  /* Remove padding to allow map to fill */
+  position: relative;
+  overflow: hidden;
+  height: 180px;
+  display: flex;
+  flex-direction: column;
+}
+
+.viz-map-container {
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  background-size: cover;
+  background-position: center;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.map-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(circle, rgba(0, 0, 0, 0.1) 0%, rgba(0, 0, 0, 0.4) 100%);
+  pointer-events: none;
+}
+
+.viz-label {
+  position: absolute;
+  top: 12px;
+  left: 16px;
+  z-index: 10;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  letter-spacing: 0.5px;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+  margin-bottom: 0;
+}
+
+.viz-svg {
+  width: 100%;
+  height: 100%;
+  z-index: 5;
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.5));
+}
+
+.path-line {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 0 4px var(--accent));
+}
+
+.elevation-area {
+  fill: url(#elevationGradient);
+  stroke: var(--success);
+  stroke-width: 1.5;
+}
+
+.komoot-link-container {
+  width: 100%;
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+
+.komoot-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 0.8rem;
+  font-weight: 500;
+  padding: 6px 12px;
+  border-radius: 20px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  transition: all var(--transition);
+}
+
+.komoot-link:hover {
+  color: #ff5722;
+  /* Komoot orange */
+  border-color: #ff5722;
+  background: rgba(255, 87, 34, 0.05);
+  transform: translateY(-1px);
+}
+
+@media (max-width: 640px) {
+  .expanded-content {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* ─── Empty & Loading States ──────────────────────────── */
@@ -538,12 +710,10 @@ body {
   border-radius: var(--radius);
   padding: 14px 18px;
   height: 66px;
-  background: linear-gradient(
-    90deg,
-    var(--bg-card) 25%,
-    var(--bg-card-hover) 50%,
-    var(--bg-card) 75%
-  );
+  background: linear-gradient(90deg,
+      var(--bg-card) 25%,
+      var(--bg-card-hover) 50%,
+      var(--bg-card) 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s ease-in-out infinite;
 }

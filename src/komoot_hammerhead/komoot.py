@@ -21,6 +21,13 @@ class TourInfo:
     distance_km: float
 
 
+@dataclass
+class TourData:
+    coordinates: list[dict[str, float]]
+    elevation: list[float]
+    map_url: str | None = None
+
+
 class KomootClient:
     def __init__(self) -> None:
         self._api = KomootApi(debug=False)
@@ -62,3 +69,34 @@ class KomootClient:
         compiler = GpxCompiler(tour=tour, api=self._api, no_poi=False, max_desc_length=-1)
         gpx_str = compiler.generate()
         return gpx_str.encode("utf-8")
+
+    def get_tour(self, tour_id: str) -> TourInfo:
+        self.login()
+        tour = self._api.fetch_tour(tour_id)
+        name = tour.get("name", "")
+        sport = tour.get("sport", "")
+        distance = tour.get("distance", 0) / 1000.0
+        return TourInfo(id=str(tour_id), name=name, sport=sport, distance_km=round(distance, 2))
+
+    def get_tour_data(self, tour_id: str) -> TourData:
+        self.login()
+        tour = self._api.fetch_tour(tour_id)
+        coords = []
+        altitudes = []
+        
+        if "_embedded" in tour and "coordinates" in tour["_embedded"]:
+            items = tour["_embedded"]["coordinates"]["items"]
+            for item in items:
+                coords.append({"lat": item["lat"], "lng": item["lng"]})
+                altitudes.append(item["alt"])
+                
+        map_url = None
+        if "vector_map_image" in tour:
+            map_url = tour["vector_map_image"].get("src")
+        elif "map_image" in tour:
+            map_url = tour["map_image"].get("src")
+            # If templated, use a reasonable default size
+            if tour["map_image"].get("templated"):
+                map_url = map_url.replace("{width}", "600").replace("{height}", "400").replace("{crop}", "false")
+
+        return TourData(coordinates=coords, elevation=altitudes, map_url=map_url)

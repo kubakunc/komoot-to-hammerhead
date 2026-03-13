@@ -53,6 +53,12 @@ class TourItem(BaseModel):
     synced: bool
 
 
+class TourDataResponse(BaseModel):
+    coordinates: list[dict[str, float]]
+    elevation: list[float]
+    map_url: str | None = None
+
+
 class RouteRecord(BaseModel):
     komoot_tour_id: str
     name: str | None
@@ -77,6 +83,12 @@ class DeleteResponse(BaseModel):
 
 @app.on_event("startup")
 def startup() -> None:
+    import logging
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+    )
     db.init_db()
 
 
@@ -107,12 +119,12 @@ def post_sync() -> SyncResponse:
     summary="Sync a single route",
     description=(
         "Downloads the GPX for the given Komoot tour ID and uploads it to "
-        "Hammerhead. Skips if already synced."
+        "Hammerhead. Skips if already synced unless `force=true`."
     ),
     dependencies=[Depends(verify_api_key)],
 )
-def post_sync_one(tour_id: str) -> SyncResponse:
-    result = sync_one(tour_id)
+def post_sync_one(tour_id: str, force: bool = False) -> SyncResponse:
+    result = sync_one(tour_id, force=force)
     return SyncResponse(
         synced=result.synced,
         skipped=result.skipped,
@@ -213,4 +225,21 @@ def get_tours() -> list[TourItem]:
         )
         for t in tours
     ]
+
+
+@app.get(
+    "/tours/{tour_id}/data",
+    response_model=TourDataResponse,
+    summary="Get tour visualization data",
+    description="Returns coordinates and elevation profile for a tour.",
+    dependencies=[Depends(verify_api_key)],
+)
+def get_tour_data_endpoint(tour_id: str) -> TourDataResponse:
+    komoot = KomootClient()
+    data = komoot.get_tour_data(tour_id)
+    return TourDataResponse(
+        coordinates=[{"lat": c["lat"], "lng": c["lng"]} for c in data.coordinates],
+        elevation=data.elevation,
+        map_url=data.map_url,
+    )
 
