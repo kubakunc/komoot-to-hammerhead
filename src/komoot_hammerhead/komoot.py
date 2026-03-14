@@ -25,6 +25,11 @@ class TourInfo:
 class TourData:
     coordinates: list[dict[str, float]]
     elevation: list[float]
+    duration_s: int
+    elevation_up: float
+    elevation_down: float
+    difficulty: str | None = None
+    surfaces: list[dict[str, str | float]] | None = None
     map_url: str | None = None
 
 
@@ -99,4 +104,19 @@ class KomootClient:
             if tour["map_image"].get("templated"):
                 map_url = map_url.replace("{width}", "600").replace("{height}", "400").replace("{crop}", "false")
 
-        return TourData(coordinates=coords, elevation=altitudes, map_url=map_url)
+        difficulty = tour.get("difficulty", {}).get("grade")
+        duration = tour.get("duration", 0)
+        up = tour.get("elevation_up", 0)
+        down = tour.get("elevation_down", 0)
+        surfaces = tour.get("summary", {}).get("surfaces", [])
+
+        return TourData(
+            coordinates=coords,
+            elevation=altitudes,
+            duration_s=int(duration),
+            elevation_up=float(up),
+            elevation_down=float(down),
+            difficulty=difficulty,
+            surfaces=surfaces,
+            map_url=map_url
+        )

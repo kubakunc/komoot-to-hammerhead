@@ -119,6 +119,25 @@ body {
 .app-header {
   text-align: center;
   margin-bottom: 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.header-logo-container {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  justify-content: center;
+}
+
+.header-logo {
+  height: 48px;
+  width: 48px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .app-title {
@@ -572,6 +591,135 @@ body {
   fill: url(#elevationGradient);
   stroke: var(--success);
   stroke-width: 1.5;
+}
+
+.viz-elevation-container {
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  position: relative;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.viz-stats-overlay {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  z-index: 20;
+}
+
+.viz-gain-badge,
+.viz-loss-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+  backdrop-filter: blur(4px);
+  text-align: right;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.viz-gain-badge {
+  color: var(--success);
+  background: rgba(52, 211, 153, 0.1);
+}
+
+.viz-loss-badge {
+  color: var(--error);
+  background: rgba(248, 113, 113, 0.1);
+}
+
+.elevation-chart {
+  padding: 0;
+  overflow: visible;
+}
+
+/* ─── Route Details Grid ────────────────────────────── */
+
+.route-details-grid {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  padding: 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  margin-top: -4px;
+}
+
+.detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.detail-item.surfaces {
+  grid-column: span 3;
+}
+
+.detail-label {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.detail-value {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.detail-value.difficulty-easy {
+  color: var(--success);
+}
+
+.detail-value.difficulty-moderate {
+  color: #fbbf24;
+}
+
+.detail-value.difficulty-hard {
+  color: #f87171;
+}
+
+.surface-bar {
+  height: 6px;
+  width: 100%;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 3px;
+  overflow: hidden;
+  display: flex;
+  margin-top: 4px;
+}
+
+.surface-segment {
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+.surface-segment:nth-child(1) {
+  background: #6c63ff;
+}
+
+.surface-segment:nth-child(2) {
+  background: #8b83ff;
+}
+
+.surface-segment:nth-child(3) {
+  background: #555d73;
+}
+
+.surface-segment:nth-child(4) {
+  background: #1e2435;
 }
 
 .komoot-link-container {

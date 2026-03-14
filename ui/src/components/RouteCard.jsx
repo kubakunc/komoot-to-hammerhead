@@ -14,6 +14,22 @@ const SPORT_ICONS = {
     other: '📍',
 };
 
+function formatDuration(seconds) {
+    if (!seconds) return '0:00';
+    const hrs = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    return `${hrs}:${mins.toString().padStart(2, '0')}`;
+}
+
+function getDifficultyColor(diff) {
+    const colors = {
+        easy: '#34d399',
+        moderate: '#fbbf24',
+        hard: '#f87171',
+    };
+    return colors[diff] || 'var(--text-muted)';
+}
+
 import { useState, useEffect } from 'react';
 import { fetchTourData } from '../api';
 
@@ -150,28 +166,79 @@ export default function RouteCard({ tour, selected, syncing, onToggle }) {
     const renderElevation = () => {
         if (!vizData?.elevation?.length) return null;
         const el = vizData.elevation;
+        const distKm = tour.distance_km;
         const minEl = Math.min(...el);
         const maxEl = Math.max(...el);
-        const width = 200;
-        const height = 120;
-        const padding = 10;
+        const width = 300;
+        const height = 150;
+        const paddingLeft = 35;
+        const paddingBottom = 20;
+        const paddingTop = 20;
+        const paddingRight = 10;
 
-        const scaleX = (i) => (i / (el.length - 1)) * width;
-        const scaleY = (val) => height - padding - ((val - minEl) / (Math.max(1, maxEl - minEl))) * (height - 2 * padding);
+        const chartWidth = width - paddingLeft - paddingRight;
+        const chartHeight = height - paddingTop - paddingBottom;
+
+        const scaleX = (i) => paddingLeft + (i / (el.length - 1)) * chartWidth;
+        const scaleY = (val) => paddingTop + chartHeight - ((val - minEl) / (Math.max(1, maxEl - minEl))) * chartHeight;
 
         const points = el.map((v, i) => `${scaleX(i)},${scaleY(v)}`);
-        const pathData = `M 0,${height} ` + points.map(p => `L ${p}`).join(' ') + ` L ${width},${height} Z`;
+        const pathData = `M ${paddingLeft},${paddingTop + chartHeight} ` + points.map(p => `L ${p}`).join(' ') + ` L ${paddingLeft + chartWidth},${paddingTop + chartHeight} Z`;
+
+        const yLabels = [];
+        const yStep = Math.max(25, Math.ceil((maxEl - minEl) / 3 / 25) * 25);
+        for (let v = Math.floor(minEl / yStep) * yStep; v <= maxEl + 10; v += yStep) {
+            yLabels.push(v);
+        }
+
+        const xLabels = [];
+        const xStep = distKm > 100 ? 50 : distKm > 40 ? 20 : distKm > 15 ? 10 : 5;
+        for (let d = 0; d <= distKm; d += xStep) {
+            xLabels.push(d);
+        }
 
         return (
-            <svg viewBox={`0 0 ${width} ${height}`} className="viz-svg" preserveAspectRatio="none">
-                <defs>
-                    <linearGradient id="elevationGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="var(--success)" stopOpacity="0.4" />
-                        <stop offset="100%" stopColor="var(--success)" stopOpacity="0" />
-                    </linearGradient>
-                </defs>
-                <path d={pathData} className="elevation-area" />
-            </svg>
+            <div className="viz-elevation-container detail-view">
+                <div className="viz-stats-overlay">
+                    <div className="viz-gain-badge">+{Math.round(vizData.elevation_up)}m</div>
+                    <div className="viz-loss-badge">-{Math.round(vizData.elevation_down)}m</div>
+                </div>
+                <svg viewBox={`0 0 ${width} ${height}`} className="viz-svg elevation-chart" preserveAspectRatio="xMidYMid meet">
+                    <defs>
+                        <linearGradient id="elevationGradient" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="var(--success)" stopOpacity="0.3" />
+                            <stop offset="100%" stopColor="var(--success)" stopOpacity="0.05" />
+                        </linearGradient>
+                    </defs>
+
+                    {yLabels.map(v => (
+                        <g key={`y-${v}`}>
+                            <line x1={paddingLeft} y1={scaleY(v)} x2={width - paddingRight} y2={scaleY(v)} stroke="rgba(255,255,255,0.05)" strokeDasharray="2,2" />
+                            <text x={paddingLeft - 5} y={scaleY(v) + 3} fill="var(--text-muted)" fontSize="8" textAnchor="end">{v}m</text>
+                        </g>
+                    ))}
+
+                    {xLabels.map(d => {
+                        const i = Math.round((d / distKm) * (el.length - 1));
+                        if (i < 0 || i >= el.length) return null;
+                        return (
+                            <g key={`x-${d}`}>
+                                <line x1={scaleX(i)} y1={paddingTop} x2={scaleX(i)} y2={paddingTop + chartHeight} stroke="rgba(255,255,255,0.05)" strokeDasharray="2,2" />
+                                <text x={scaleX(i)} y={height - 5} fill="var(--text-muted)" fontSize="8" textAnchor="middle">{d}km</text>
+                            </g>
+                        );
+                    })}
+
+                    <path d={pathData} className="elevation-area" fill="url(#elevationGradient)" />
+                    <polyline points={points.join(' ')} fill="none" stroke="var(--success)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+
+                    <circle cx={scaleX(0)} cy={scaleY(el[0])} r="3" fill="#34d399" stroke="white" strokeWidth="1" />
+                    <text x={scaleX(0)} y={scaleY(el[0]) - 8} fill="white" fontSize="9" fontWeight="800" textAnchor="middle">A</text>
+
+                    <circle cx={scaleX(el.length - 1)} cy={scaleY(el[el.length - 1])} r="3" fill="#f87171" stroke="white" strokeWidth="1" />
+                    <text x={scaleX(el.length - 1)} y={scaleY(el[el.length - 1]) - 8} fill="white" fontSize="9" fontWeight="800" textAnchor="middle">B</text>
+                </svg>
+            </div>
         );
     };
 
@@ -206,7 +273,7 @@ export default function RouteCard({ tour, selected, syncing, onToggle }) {
                 <>
                     <div className="expanded-content">
                         <div className="viz-box">
-                            <div className="viz-label">GPX Path</div>
+                            <div className="viz-label">Map View</div>
                             {loadingViz ? <div className="loading-dots">...</div> : renderPath()}
                         </div>
                         <div className="viz-box">
@@ -214,6 +281,39 @@ export default function RouteCard({ tour, selected, syncing, onToggle }) {
                             {loadingViz ? <div className="loading-dots">...</div> : renderElevation()}
                         </div>
                     </div>
+
+                    {!loadingViz && vizData && (
+                        <div className="route-details-grid">
+                            <div className="detail-item">
+                                <span className="detail-label">Duration</span>
+                                <span className="detail-value">{formatDuration(vizData.duration_s)}h</span>
+                            </div>
+                            <div className="detail-item">
+                                <span className="detail-label">Difficulty</span>
+                                <span className={`detail-value difficulty-${vizData.difficulty}`} style={{ color: getDifficultyColor(vizData.difficulty) }}>
+                                    {vizData.difficulty}
+                                </span>
+                            </div>
+                            <div className="detail-item">
+                                <span className="detail-label">Climb / Descent</span>
+                                <span className="detail-value">+{Math.round(vizData.elevation_up)}m / -{Math.round(vizData.elevation_down)}m</span>
+                            </div>
+                            <div className="detail-item surfaces">
+                                <span className="detail-label">Surfaces</span>
+                                <div className="surface-bar">
+                                    {(vizData.surfaces || []).map((s, i) => (
+                                        <div
+                                            key={i}
+                                            className="surface-segment"
+                                            style={{ width: `${s.amount * 100}%` }}
+                                            title={`${s.type.replace('sb#', '')}: ${Math.round(s.amount * 100)}%`}
+                                        />
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
                     <div className="komoot-link-container">
                         <a
                             href={`https://www.komoot.com/tour/${tour.id}`}

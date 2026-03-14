@@ -140,7 +140,10 @@ export default function App() {
     <>
       {/* Header */}
       <header className="app-header fade-in">
-        <h1 className="app-title">Komoot → Hammerhead</h1>
+        <div className="header-logo-container">
+          <img src="/app-logo.png" alt="Logo" className="header-logo" />
+          <h1 className="app-title">Komoot → Hammerhead</h1>
+        </div>
         <p className="app-subtitle">Select routes to sync to your Karoo</p>
       </header>
 

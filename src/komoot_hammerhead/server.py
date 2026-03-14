@@ -56,6 +56,11 @@ class TourItem(BaseModel):
 class TourDataResponse(BaseModel):
     coordinates: list[dict[str, float]]
     elevation: list[float]
+    duration_s: int
+    elevation_up: float
+    elevation_down: float
+    difficulty: str | None = None
+    surfaces: list[dict[str, str | float]] | None = None
     map_url: str | None = None
 
 
@@ -231,7 +236,7 @@ def get_tours() -> list[TourItem]:
     "/tours/{tour_id}/data",
     response_model=TourDataResponse,
     summary="Get tour visualization data",
-    description="Returns coordinates and elevation profile for a tour.",
+    description="Returns coordinates, elevation profile, and rich metadata for a tour.",
     dependencies=[Depends(verify_api_key)],
 )
 def get_tour_data_endpoint(tour_id: str) -> TourDataResponse:
@@ -240,6 +245,11 @@ def get_tour_data_endpoint(tour_id: str) -> TourDataResponse:
     return TourDataResponse(
         coordinates=[{"lat": c["lat"], "lng": c["lng"]} for c in data.coordinates],
         elevation=data.elevation,
+        duration_s=data.duration_s,
+        elevation_up=data.elevation_up,
+        elevation_down=data.elevation_down,
+        difficulty=data.difficulty,
+        surfaces=data.surfaces,
         map_url=data.map_url,
     )
 
